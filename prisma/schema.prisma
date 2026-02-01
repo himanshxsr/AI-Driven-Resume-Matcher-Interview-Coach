@@ -1,0 +1,50 @@
+// AI-Driven Resume Matcher & Interview Coach
+// PostgreSQL via Prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String?
+  passwordHash String?   // optional; for future auth
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  resumes      Resume[]
+
+  @@map("users")
+}
+
+model Resume {
+  id               String        @id @default(cuid())
+  userId           String
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  originalFileName String
+  fileUrl          String        // storage path or URL
+  parsedText       String        @db.Text
+  createdAt        DateTime      @default(now())
+  analyses         JobAnalysis[]
+
+  @@map("resumes")
+}
+
+model JobAnalysis {
+  id                       String   @id @default(cuid())
+  resumeId                 String
+  resume                   Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  jobDescription           String   @db.Text
+  matchScore               Int      // 0–100
+  missingKeywords          Json     // string[]
+  strengths                Json     // string[]
+  suggestedInterviewQuestions Json  // string[]
+  createdAt                DateTime @default(now())
+
+  @@map("job_analyses")
+}
